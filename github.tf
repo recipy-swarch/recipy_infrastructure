@@ -52,6 +52,12 @@ resource "github_organization_settings" "org_settings" {
     secret_scanning_push_protection_enabled_for_new_repositories = true
 }
 
+# Team
+resource "github_team" "recipy_team" {
+  name        = "recipy-team"
+  description = "El equipo de desarrollo de Recipy"
+}
+
 # Adding members to the organization
 # Add a user to the organization
 resource "github_membership" "membership_for_fnovoas" {
@@ -77,6 +83,35 @@ resource "github_membership" "membership_for_luisdiazv" {
 resource "github_membership" "membership_for_CrockedSpecs" {
   username = "CrockedSpecs"
   role     = "member"
+}
+
+resource "github_team_members" "recipy_team_members" {
+  team_id  = github_team.recipy_team.id
+
+  members {
+    username = "fnovoas"
+    role     = "member"
+  }
+  members {
+    username = "jvasquezp"
+    role     = "maintainer"
+  }
+  members {
+    username = "johnrua17"
+    role     = "member"
+  }
+  members {
+    username = "Emperator777"
+    role     = "member"
+  }
+  members {
+    username = "luisdiazv"
+    role     = "member"
+  }
+  members {
+    username = "CrockedSpecs"
+    role     = "member"
+  }
 }
 
 # TODO: Define the teams and their members
@@ -144,6 +179,15 @@ resource "github_repository" "recipy_repo" {
   allow_update_branch = true # It sounds useful to have this option. But I don't know if we need it.
 }
 
+resource "github_repository_collaborators" "recipy_repo_collaborators" {
+  repository = github_repository.recipy_repo.name
+
+  team {
+    permission = "push"
+    team_id = github_team.recipy_team.id
+  }
+}
+
 # Create the "development" branch
 resource "github_branch" "development" {
   repository = github_repository.recipy_repo.name
@@ -177,7 +221,7 @@ resource "github_branch_protection" "recipy_repo_protection" {
   # force_push_bystanders = [] # Nobody will be able to bypass the review process.
   allows_force_pushes = false # I don't want to allow force pushes. It's a bad practice and can cause problems.
   allows_deletions = false
-  lock_branch = false # I don't want to lock the branch. We nee to be able to PR to it.
+  lock_branch = true # I don't want to lock the branch. We nee to be able to PR to it.
 }
 
 
@@ -186,7 +230,7 @@ resource "github_branch_protection" "recipy_repo_protection_development" {
   pattern        = "development"
 
   enforce_admins          = true          # Even admins have to follow the rules.
-  require_signed_commits = true  # Homework for JD: Teach everyone hot to add a GPG key to their GitHub account
+  require_signed_commits = false  # Homework for JD: Teach everyone hot to add a GPG key to their GitHub account
   required_linear_history = false # Teacher's recommendation
   require_conversation_resolution = true # It's important to address all comments before merging the PR.
   
