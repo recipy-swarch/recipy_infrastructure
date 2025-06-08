@@ -200,7 +200,7 @@ resource "github_branch_protection" "recipy_repo_protection" {
   pattern        = "main"
 
   enforce_admins          = true          # Even admins have to follow the rules.
-  require_signed_commits = true  # Homework for JD: Teach everyone hot to add a GPG key to their GitHub account
+  require_signed_commits = false  # Homework for JD: Teach everyone hot to add a GPG key to their GitHub account
   required_linear_history = false # Teacher's recommendation
   require_conversation_resolution = true # It's important to address all comments before merging the PR.
   
@@ -214,14 +214,14 @@ resource "github_branch_protection" "recipy_repo_protection" {
     # restrict_dimissals and dimissal_restrictions wont be used, as I think everyone should be able to dismiss a review.
     # pull_request_bypassers = [] # Nobody will be able to bypass the review process.
     require_code_owner_reviews      = false
-    required_approving_review_count = 5 # We are 6, the team is small, so I think before a stable build we should all approve the PR.
+    required_approving_review_count = 3 # We are 6, the team is small, so I think before a stable build we should all approve the PR.
     require_last_push_approval      = true # If thinks go wrong, we can set this to false.
   }
 
   # force_push_bystanders = [] # Nobody will be able to bypass the review process.
   allows_force_pushes = false # I don't want to allow force pushes. It's a bad practice and can cause problems.
   allows_deletions = false
-  lock_branch = true # I don't want to lock the branch. We nee to be able to PR to it.
+  lock_branch = false # I don't want to lock the branch. We nee to be able to PR to it.
 }
 
 
@@ -344,4 +344,52 @@ resource "github_branch_protection" "recipy_infrastructure_repo_protection" {
   allows_force_pushes = false # I don't want to allow force pushes. It's a bad practice and can cause problems.
   allows_deletions = false
   lock_branch = false # I don't want to lock the branch. We nee to be able to PR to it.
+}
+
+resource "github_repository_collaborators" "recipy_infra_collaborators" {
+  repository = github_repository.recipy_infrastructure_repo.name
+
+  team {
+    team_id    = github_team.recipy_team.id
+    permission = "push"     # o "admin"/"maintain" según necesidades
+  }
+}
+
+// Repositorio para la app móvil
+resource "github_repository" "recipy_mobile_repo" {
+  name        = "recipy-mobile"
+  description = "Repositorio para la aplicación móvil de Recipy"
+  visibility  = "public"
+
+  has_issues       = true
+  has_wiki         = true
+  has_discussions  = true
+  has_projects     = true
+  delete_branch_on_merge = true
+
+  auto_init           = false
+  # gitignore_template  = "Terraform"
+  archive_on_destroy  = true
+
+  security_and_analysis {
+    secret_scanning {
+      status = "enabled"
+    }
+    secret_scanning_push_protection {
+      status = "enabled"
+    }
+  }
+  vulnerability_alerts                 = true
+  ignore_vulnerability_alerts_during_read = false
+  allow_update_branch                 = true
+}
+
+// Dar acceso al equipo “recipy-team” al repositorio movíl
+resource "github_repository_collaborators" "recipy_mobile_collaborators" {
+  repository = github_repository.recipy_mobile_repo.name
+
+  team {
+    team_id    = github_team.recipy_team.id
+    permission = "push"  # o "admin"/"maintain" según necesidades
+  }
 }
